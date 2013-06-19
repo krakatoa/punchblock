@@ -45,6 +45,7 @@ module Punchblock
           @es_env = es_env || {}
           @components = {}
           @pending_joins, @pending_unjoins = {}, {}
+          @block_commands = false
           @answered = false
           setup_handlers
         end
@@ -79,6 +80,7 @@ module Punchblock
           end
 
           register_handler :es, :event_name => 'CHANNEL_HANGUP' do |event|
+            @block_commands = true
             @components.dup.each_pair do |id, component|
               safe_from_dead_actors do
                 component.call_ended if component.alive?
@@ -170,6 +172,10 @@ module Punchblock
         end
 
         def execute_command(command)
+          if @block_commands
+            command.response = ProtocolError.new.setup :item_not_found, "Could not find a call with ID #{id}", id
+            return
+          end
           if command.component_id
             if component = component_with_id(command.component_id)
               component.execute_command command
