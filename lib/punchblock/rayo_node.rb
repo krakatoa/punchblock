@@ -59,7 +59,7 @@ module Punchblock
       end.tap do |event|
         event.target_call_id = call_id
         event.component_id = component_id
-        event.source_uri = uri
+        event.source_uri = uri.split("/")[1] rescue nil
       end
     end
 
